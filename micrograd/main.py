@@ -49,19 +49,16 @@ def main():
     x2w2 = x2 * w2
     x1w1_x2w2 = x1w1 + x2w2
     n = x1w1_x2w2 + b
-    o = n.tanh()
+    e = (2 * n).exp()
+    o = (e - 1) / (e + 1)
 
     # back prop
     o.zero_grad()
     o.backward()
 
-    x1_2 = x1 + x1
-    x1_2.zero_grad()
-    x1_2.backward()
-
     # draw
-    cg = draw_computation_graph(x1_2)
-    cg.render('./diagrams/x1_2', format='png', cleanup=True)
+    cg = draw_computation_graph(o)
+    cg.render('./diagrams/nn-expanded', format='png', cleanup=True)
 
 if __name__ == '__main__':
     main()
