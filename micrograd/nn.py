@@ -13,6 +13,9 @@ class Neuron:
         result = act.tanh()
         return result
 
+    def parameters(self) -> list[Value]:
+        return self.w + [self.b]
+
 class Layer:
     def __init__(self, nin: int, nout: int) -> None:
         self.neurons = [Neuron(nin) for _ in range(nout)]
@@ -20,6 +23,12 @@ class Layer:
     def __call__(self, x: Union[list[Value], list[float]]) -> list[Value]:
         results = [n(x) for n in self.neurons]
         return results
+
+    def parameters(self) -> list[Value]:
+        params: list[Value] = []
+        for neuron in self.neurons:
+            params.extend(neuron.parameters())
+        return params
 
 class MLP:
     def __init__(self, nin: int, nouts: list[int]) -> None:
@@ -30,3 +39,9 @@ class MLP:
         for layer in self.layers:
             x = layer(x)
         return x # type: ignore
+
+    def parameters(self) -> list[Value]:
+        params: list[Value] = []
+        for layer in self.layers:
+            params.extend(layer.parameters())
+        return params

@@ -1,20 +1,29 @@
 from nn import MLP
-from viz import draw_computation_graph
+from value import Value
 
 def main():
+    # data
+    xs = [
+        [2.0, 3.0, -1.0],
+        [3.0, -1.0, 0.5],
+        [0.5, 1.0, 1.0],
+        [1.0, 1.0, -1.0]
+    ]
+    ys = [1.0, -1.0, -1.0, 1.0]
+
     # nn
-    x = [2.0, 3.0, -1]
     n = MLP(3, [4, 4, 1])
-    r = n(x)
-    o = r[0]
 
-    # back prop
-    o.zero_grad()
-    o.backward()
-
-    # draw
-    cg = draw_computation_graph(o)
-    cg.render('./diagrams/mlp', format='png', cleanup=True)
+    # training loop
+    for i in range(10000):
+        ypreds = [n(x)[0] for x in xs]
+        loss = sum(((yout - ygt)**2 for ygt, yout in zip(ys, ypreds)), Value(0))
+        if i % 1000 == 0:
+            print('Current loss', loss.data)
+        loss.zero_grad()
+        loss.backward()
+        for p in n.parameters():
+            p.data += - 0.1 * p.grad
 
 if __name__ == '__main__':
     main()
