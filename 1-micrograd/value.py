@@ -30,13 +30,6 @@ class Value:
         for node in reversed(topo):
             node._backward()
 
-    def zero_grad(self) -> None:
-        def step(value: Value) -> None:
-            value.grad = 0
-            for child in value._prev:
-                step(child)
-        step(self)
-
     def tanh(self) -> Value:
         e = math.exp(2 * self.data)
         t = (e - 1) / (e + 1)

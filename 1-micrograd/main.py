@@ -12,17 +12,17 @@ def main():
     ys = [1.0, -1.0, -1.0, 1.0]
 
     # nn
-    n = MLP(3, [4, 4, 1])
+    mlp = MLP(3, [4, 4, 1])
 
     # training loop
     for i in range(10000):
-        ypreds = [n(x)[0] for x in xs]
+        ypreds = [mlp(x)[0] for x in xs]
         loss = sum(((yout - ygt)**2 for ygt, yout in zip(ys, ypreds)), Value(0))
         if i % 1000 == 0:
             print('Current loss', loss.data)
-        loss.zero_grad()
+        mlp.zero_grad()
         loss.backward()
-        for p in n.parameters():
+        for p in mlp.parameters():
             p.data += - 0.1 * p.grad
 
 if __name__ == '__main__':

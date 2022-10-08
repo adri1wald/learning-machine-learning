@@ -2,7 +2,15 @@ from typing import Union
 import random
 from value import Value
 
-class Neuron:
+class Module:
+    def zero_grad(self):
+        for p in self.parameters():
+            p.grad = 0
+    
+    def parameters(self) -> list[Value]:
+        return []
+
+class Neuron(Module):
     def __init__(self, nin: int) -> None:
         self.w = [Value(random.uniform(-1, 1)) for _ in range(nin)]
         self.b = Value(random.uniform(-1, 1))
@@ -16,7 +24,7 @@ class Neuron:
     def parameters(self) -> list[Value]:
         return self.w + [self.b]
 
-class Layer:
+class Layer(Module):
     def __init__(self, nin: int, nout: int) -> None:
         self.neurons = [Neuron(nin) for _ in range(nout)]
 
@@ -30,7 +38,7 @@ class Layer:
             params.extend(neuron.parameters())
         return params
 
-class MLP:
+class MLP(Module):
     def __init__(self, nin: int, nouts: list[int]) -> None:
         sz = [nin] + nouts
         self.layers = [Layer(sz[i], sz[i+1]) for i in range(len(nouts))]
