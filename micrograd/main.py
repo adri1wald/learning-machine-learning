@@ -24,7 +24,7 @@ def draw_computation_graph(root: Value):
         node_id = str(id(node))
         dot.node(
             name=node_id,
-            label="{ data %.4f }" % (node.data, ),
+            label="{ data %.4f | grad %.4f }" % (node.data, node.grad),
             shape='record'
         )
         if node._op:
@@ -39,12 +39,30 @@ def draw_computation_graph(root: Value):
     return dot
 
 def main():
-    a = Value(2.0)
-    b = Value(-3.0)
-    c = Value(10)
-    d = a * b + c
-    cg = draw_computation_graph(d)
-    cg.render('./diagrams/cg-abcd', format='png', cleanup=True)
+    # nn
+    x1 = Value(2.0)
+    x2 = Value(0.0)
+    w1 = Value(-3.0)
+    w2 = Value(1.0)
+    b = Value(6.8813735870195432)
+    x1w1 = x1 * w1
+    x2w2 = x2 * w2
+    x1w1_x2w2 = x1w1 + x2w2
+    n = x1w1_x2w2 + b
+    o = n.tanh()
+
+    # back prop
+    o.grad = 1.0
+    o._backward()
+    n._backward()
+    b._backward()
+    x1w1_x2w2._backward()
+    x2w2._backward()
+    x1w1._backward()
+
+    # draw
+    cg = draw_computation_graph(o)
+    cg.render('./diagrams/nn', format='png', cleanup=True)
 
 if __name__ == '__main__':
     main()
