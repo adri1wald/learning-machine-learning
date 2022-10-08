@@ -55,9 +55,13 @@ def main():
     o.zero_grad()
     o.backward()
 
+    x1_2 = x1 + x1
+    x1_2.zero_grad()
+    x1_2.backward()
+
     # draw
-    cg = draw_computation_graph(o)
-    cg.render('./diagrams/nn', format='png', cleanup=True)
+    cg = draw_computation_graph(x1_2)
+    cg.render('./diagrams/x1_2', format='png', cleanup=True)
 
 if __name__ == '__main__':
     main()

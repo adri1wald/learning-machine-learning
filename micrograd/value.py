@@ -20,23 +20,23 @@ class Value:
         t = (e - 1) / (e + 1)
         result = Value(t, (self, ), 'tanh')
         def _backward():
-            self.grad = (1 - t**2) * result.grad
+            self.grad += (1 - t**2) * result.grad
         result._backward = _backward
         return result
 
     def __add__(self, other: Value) -> Value:
         result = Value(self.data + other.data, (self, other), '+')
         def _backward():
-            self.grad = 1.0 * result.grad
-            other.grad = 1.0 * result.grad
+            self.grad += result.grad
+            other.grad += result.grad
         result._backward = _backward
         return result
 
     def __mul__(self, other: Value) -> Value:
         result = Value(self.data * other.data, (self, other), '*')
         def _backward():
-            self.grad = other.data * result.grad
-            other.grad = self.data * result.grad
+            self.grad += other.data * result.grad
+            other.grad += self.data * result.grad
         result._backward = _backward
         return result
 
