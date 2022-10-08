@@ -52,13 +52,8 @@ def main():
     o = n.tanh()
 
     # back prop
-    o.grad = 1.0
-    o._backward()
-    n._backward()
-    b._backward()
-    x1w1_x2w2._backward()
-    x2w2._backward()
-    x1w1._backward()
+    o.zero_grad()
+    o.backward()
 
     # draw
     cg = draw_computation_graph(o)

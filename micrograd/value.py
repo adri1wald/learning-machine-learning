@@ -42,3 +42,25 @@ class Value:
 
     def __repr__(self) -> str:
         return f"Value(data={self.data})"
+
+    def zero_grad(self) -> None:
+        def step(value: Value) -> None:
+            value.grad = 0
+            for child in value._prev:
+                step(child)
+        step(self)
+
+    def backward(self) -> None:
+        topo: list[Value] = []
+        visited: set[Value] = set()
+        def build_topo(value: Value):
+            if value in visited:
+                return
+            visited.add(value)
+            for child in value._prev:
+                build_topo(child)
+            topo.append(value)
+        build_topo(self)
+        self.grad = 1
+        for node in reversed(topo):
+            node._backward()
