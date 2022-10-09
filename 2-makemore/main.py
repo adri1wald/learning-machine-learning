@@ -4,6 +4,7 @@ from bigram_model import BigramModel
 
 def main():
     # globals
+    # TODO: figure out why this gives different results to andrej's code
     g = torch.Generator().manual_seed(2147483647)
 
     # setup tokenizer
@@ -19,12 +20,16 @@ def main():
 
     # "train" bigram model
     model = BigramModel(tokenizer)
-    model.train(words)
+    model.train(words, smoothing=1)
 
     # sample
     for _ in range(10):
         word = model.generate(g)
         print(word)
+    
+    # eval
+    nll = model.eval(words)
+    print(f'Negative log likelihood: {nll}')
 
 if __name__ == '__main__':
     main()

@@ -55,11 +55,12 @@ class Tokenizer:
         else:
             return [self.tokenize(w) for w in words]
 
-    def untokenize(self, tokens: list[str]) -> str:
-        tokens = [
-            token for token in tokens
-            if token != self.start_token and token != self.end_token
-        ]
+    def untokenize(self, tokens: list[str], exclude_special_tokens: bool = True) -> str:
+        if exclude_special_tokens:
+            tokens = [
+                token for token in tokens
+                if token != self.start_token and token != self.end_token
+            ]
         return ''.join(tokens)
 
     def __len__(self) -> int:
