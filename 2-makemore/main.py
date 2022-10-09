@@ -1,8 +1,11 @@
 import torch
 from tokenizer import Tokenizer
-# from viz import draw_freqs
+from bigram_model import BigramModel
 
 def main():
+    # globals
+    g = torch.Generator().manual_seed(2147483647)
+
     # setup tokenizer
     WORDS = open('./names.txt').read().splitlines()
     VOCABULARY = Tokenizer.compute_vocabulary(WORDS)
@@ -14,31 +17,14 @@ def main():
 
     words = WORDS #[:10]
 
-    N = torch.zeros(
-        (tokenizer.vocab_size, tokenizer.vocab_size),
-        dtype=torch.int32
-    )
+    # "train" bigram model
+    model = BigramModel(tokenizer)
+    model.train(words)
 
-    bigrams = compute_bigrams(words, tokenizer)
-    for tok1, tok2 in bigrams:
-        enc1 = tokenizer.encode(tok1)
-        enc2 = tokenizer.encode(tok2)
-        N[enc1, enc2] += 1
-
-    # draw_freqs(N, tokenizer)
-
-    P = N[0].float()
-    P = P / P.sum()
-    print(P)
-
-Bigram = tuple[str, str]
-def compute_bigrams(words: list[str], tokenizer: Tokenizer) -> list[Bigram]:
-    bigrams: list[Bigram] = []
-    for word in words:
-        tokens = tokenizer.tokenize(word)
-        for tok1, tok2 in zip(tokens, tokens[1:]):
-            bigrams.append((tok1, tok2))
-    return bigrams
+    # sample
+    for _ in range(10):
+        word = model.generate(g)
+        print(word)
 
 if __name__ == '__main__':
     main()
