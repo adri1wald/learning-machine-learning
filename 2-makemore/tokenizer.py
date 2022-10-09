@@ -1,7 +1,5 @@
 from typing import Optional, overload
 
-Bigram = tuple[str, str]
-
 class Tokenizer:
     def __init__(
         self,
@@ -44,13 +42,18 @@ class Tokenizer:
         else:
             return [self._itos[e] for e in encodings]
 
-    def compute_bigrams(self, words: list[str]) -> list[Bigram]:
-        bigrams: list[Bigram] = []
-        for word in words:
-            chars = [self.start_token] + list(word) + [self.end_token]
-            for first_char, second_char in zip(chars, chars[1:]):
-                bigrams.append((first_char, second_char))
-        return bigrams
+    @overload
+    def tokenize(self, words: str) -> list[str]:
+        ...
+    @overload
+    def tokenize(self, words: list[str]) -> list[list[str]]:
+        ...
+    def tokenize(self, words: str | list[str]) -> list[str] | list[list[str]]:
+        if isinstance(words, str):
+            tokens = [self.start_token] + list(words) + [self.end_token]
+            return tokens
+        else:
+            return [self.tokenize(w) for w in words]
 
     def __len__(self) -> int:
         return self.vocab_size
