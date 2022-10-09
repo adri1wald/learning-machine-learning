@@ -10,7 +10,9 @@ def create_dataset(words: list[str], tokenizer: Tokenizer) -> tuple[torch.Tensor
         for enc1, enc2, in zip(encodings, encodings[1:]):
             xs.append(enc1)
             ys.append(enc2)
-    return torch.Tensor(xs), torch.Tensor(ys)
+    # prefer use of torch.tensor over torch.Tensor, torch.tensor infers the dtype
+    # whereas torch.Tensor uses f32 unless otherwise specified
+    return torch.tensor(xs), torch.tensor(ys)
 
 def main():
     # globals
