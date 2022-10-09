@@ -27,7 +27,18 @@ def main():
         enc2 = dataset.encode(tok2)
         N[enc1, enc2] += 1
 
-    plt.imsave('./figures/freqs.png', N)
+    fig = plt.figure(figsize=(16, 16))
+    plot = fig.add_subplot(111)
+    plot.imshow(N, cmap='Blues')
+    plot.axis('off')
+    for i in range(dataset.vocab_size):
+        for j in range(dataset.vocab_size):
+            bigram = ''.join(dataset.decode([i, j]))
+            freq = str(N[i, j].item())
+            plot.text(j, i, bigram, ha='center', va='bottom', color='gray')
+            plot.text(j, i, freq, ha='center', va='top', color='gray')
+
+    fig.savefig('./figures/freqs.png')
 
 if __name__ == '__main__':
     main()

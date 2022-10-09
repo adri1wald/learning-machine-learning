@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, overload
 
 Bigram = tuple[str, str]
 
@@ -17,11 +17,29 @@ class MakemoreDataset:
         self._itos = [self.start_token, *self.vocabulary, self.end_token]
         self._stoi = { s: i for i, s in enumerate(self._itos) }
 
-    def encode(self, token: str) -> int:
-        return self._stoi[token]
+    @overload
+    def encode(self, tokens: str) -> int:
+        ...
+    @overload
+    def encode(self, tokens: list[str]) -> list[int]:
+        ...
+    def encode(self, tokens: str | list[str]) -> int | list[int]:
+        if isinstance(tokens, str):
+            return self._stoi[tokens]
+        else:
+            return [self._stoi[t] for t in tokens]
 
-    def decode(self, enc: int) -> str:
-        return self._itos[enc]
+    @overload
+    def decode(self, encodings: int) -> str:
+        ...
+    @overload
+    def decode(self, encodings: list[int]) -> list[str]:
+        ...
+    def decode(self, encodings: int | list[int]) -> str | list[str]:
+        if isinstance(encodings, int):
+            return self._itos[encodings]
+        else:
+            return [self._itos[e] for e in encodings]
 
     def get_bigrams(self, words: list[str]) -> list[Bigram]:
         bigrams: list[Bigram] = []
