@@ -1,25 +1,14 @@
 import torch
-import torch.nn.functional as F
+from neural_bigram_model import NeuralBigramModel
 from tokenizer import Tokenizer
 
-def create_dataset(words: list[str], tokenizer: Tokenizer) -> tuple[torch.Tensor, torch.Tensor]:
-    xs: list[int] = []
-    ys: list[int] = []
-    for word in words:
-        tokens = tokenizer.tokenize(word)
-        encodings = tokenizer.encode(tokens)
-        for enc1, enc2, in zip(encodings, encodings[1:]):
-            xs.append(enc1)
-            ys.append(enc2)
-    # prefer use of torch.tensor over torch.Tensor, torch.tensor infers the dtype
-    # whereas torch.Tensor uses f32 unless otherwise specified
-    return torch.tensor(xs), torch.tensor(ys)
-
+def init_gen():
+    return torch.Generator().manual_seed(2147483647)
 
 def main():
     # globals
     # TODO: figure out why this gives different results to andrej's code
-    g = torch.Generator().manual_seed(2147483647)
+    g = init_gen()
 
     # setup tokenizer
     WORDS = open('./names.txt').read().splitlines()
@@ -31,30 +20,29 @@ def main():
     )
 
     words = WORDS
-    xs, ys = create_dataset(words, tokenizer)
-    
-    # the "neural network"
-    W = torch.randn((tokenizer.vocab_size, tokenizer.vocab_size), requires_grad=True, generator=g)
-    LR = 50
 
+    model = NeuralBigramModel(tokenizer, generator=g)
+
+    xs, ys = model.create_dataset(words)
+    LR = 50
+    REG_STRENGTH = 0.01
     # training loop
     for epoch in range(200):
-        ## forward pass
-        xenc: torch.Tensor = F.one_hot(xs, num_classes=tokenizer.vocab_size).float()
-        # "log counts"
-        logits = xenc @ W
-        #loss calc
-        counts = logits.exp()
-        probs = counts / counts.sum(1, keepdim=True)
-        loss = -probs[torch.arange(xs.nelement()), ys].log().mean()
-        print(f"loss={loss.item()}")
+        loss = model.compute_loss(xs, ys, reg_strength=REG_STRENGTH)
+        if epoch % 10 == 0:
+            print(loss.item())
+        model.backward(loss, lr=LR)
 
-        ## backward pass
-        W.grad = None
-        loss.backward()
+    # sample
+    # reinitialise generator so its the same as BigramModel generations
+    g = init_gen()
+    for _ in range(10):
+        word = model.generate(g)
+        print(word)
 
-        ## update
-        W.data += -LR * W.grad # type: ignore
+    # eval
+    nll = model.eval(words)
+    print(f'Negative log likelihood: {nll}')
 
 if __name__ == '__main__':
     main()
