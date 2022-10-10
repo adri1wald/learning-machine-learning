@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 from tokenizer import Tokenizer
 
 def create_dataset(words: list[str], tokenizer: Tokenizer) -> tuple[torch.Tensor, torch.Tensor]:
@@ -14,6 +15,7 @@ def create_dataset(words: list[str], tokenizer: Tokenizer) -> tuple[torch.Tensor
     # whereas torch.Tensor uses f32 unless otherwise specified
     return torch.tensor(xs), torch.tensor(ys)
 
+
 def main():
     # globals
     # TODO: figure out why this gives different results to andrej's code
@@ -28,10 +30,31 @@ def main():
         start_token=START_TOKEN
     )
 
-    words = WORDS[:1]
+    words = WORDS
     xs, ys = create_dataset(words, tokenizer)
-    print(f"{xs=}")
-    print(f"{ys=}")
+    
+    # the "neural network"
+    W = torch.randn((tokenizer.vocab_size, tokenizer.vocab_size), requires_grad=True, generator=g)
+    LR = 50
+
+    # training loop
+    for epoch in range(200):
+        ## forward pass
+        xenc: torch.Tensor = F.one_hot(xs, num_classes=tokenizer.vocab_size).float()
+        # "log counts"
+        logits = xenc @ W
+        #loss calc
+        counts = logits.exp()
+        probs = counts / counts.sum(1, keepdim=True)
+        loss = -probs[torch.arange(xs.nelement()), ys].log().mean()
+        print(f"loss={loss.item()}")
+
+        ## backward pass
+        W.grad = None
+        loss.backward()
+
+        ## update
+        W.data += -LR * W.grad # type: ignore
 
 if __name__ == '__main__':
     main()
