@@ -35,35 +35,59 @@ def main():
     START_TOKEN = '.'
     CONTEXT_SIZE = 3
     EMBEDDING_DIM = 2
-    L1_SIZE = 100
+    HIDDEN_DIM = 100
+    LR = 0.1
+    MINIBATCH_SIZE = 32
     tokenizer = Tokenizer(
         vocabulary=VOCABULARY,
         start_token=START_TOKEN
     )
 
-    words = WORDS[:5]
+    words = WORDS
     X, Y = create_dataset(words, tokenizer, CONTEXT_SIZE)
     
+    ## MLP
     # The embedding matrix
     C = torch.randn((tokenizer.vocab_size, EMBEDDING_DIM), generator=g)
     # Layer 1
-    W1 = torch.randn((CONTEXT_SIZE * EMBEDDING_DIM, L1_SIZE), generator=g)
-    b1 = torch.randn(L1_SIZE, generator=g)
+    W1 = torch.randn((CONTEXT_SIZE * EMBEDDING_DIM, HIDDEN_DIM), generator=g)
+    b1 = torch.randn(HIDDEN_DIM, generator=g)
     # Layer 2
-    W2 = torch.randn((L1_SIZE, tokenizer.vocab_size), generator=g)
+    W2 = torch.randn((HIDDEN_DIM, tokenizer.vocab_size), generator=g)
     b2 = torch.randn(tokenizer.vocab_size, generator=g)
+    # Collect parameters
+    parameters = [C, W1, b1, W2, b2]
+    for p in parameters:
+        p.requires_grad = True
 
-    # forward pass
-    embs = C[X]
-    h = (embs.view(-1, CONTEXT_SIZE * EMBEDDING_DIM) @ W1 + b1).tanh()
-    logits = h @ W2 + b2
+    for epoch in range(100):
+        # minibatch construct
+        idxs = torch.randint(0, X.shape[0], (MINIBATCH_SIZE, ))
+        Xmb = X[idxs]
+        Ymb = Y[idxs]
 
-    # loss calc
-    counts = logits.exp()
-    probs = counts / counts.sum(1, keepdim=True)
-    loss = -probs[torch.arange(Y.nelement()), Y].log().mean()
-    print(loss)
-    
+        ## Forward pass
+        embs = C[Xmb]
+        h = (embs.view(-1, CONTEXT_SIZE * EMBEDDING_DIM) @ W1 + b1).tanh()
+        logits = h @ W2 + b2
+
+        ## Loss calculation
+        # - Much more efficient than manual softmax + picking out probs
+        # - Will cluster up operations and even use fused kernels
+        # - More numerically stable than doing logits.exp() which can result in inf
+        loss = F.cross_entropy(logits, Ymb)
+        if epoch % 3 == 0:
+            print(f"loss={loss.item()}")
+
+        ## Backward pass
+        # zero grad
+        for p in parameters:
+            p.grad = None
+        # backprop
+        loss.backward()
+        # update
+        for p in parameters:
+            p.data += -LR * p.grad # type: ignore
 
 if __name__ == '__main__':
     main()
