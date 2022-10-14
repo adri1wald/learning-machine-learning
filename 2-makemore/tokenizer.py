@@ -43,17 +43,40 @@ class Tokenizer:
             return [self._itos[e] for e in encodings]
 
     @overload
-    def tokenize(self, words: str) -> list[str]:
+    def tokenize(
+        self,
+        words: str,
+        with_start: bool | int = True,
+        with_end: bool | int = True
+    ) -> list[str]:
         ...
     @overload
-    def tokenize(self, words: list[str]) -> list[list[str]]:
+    def tokenize(
+        self,
+        words: list[str],
+        with_start: bool | int = True,
+        with_end: bool | int = True
+    ) -> list[list[str]]:
         ...
-    def tokenize(self, words: str | list[str]) -> list[str] | list[list[str]]:
+    def tokenize(
+        self,
+        words: str | list[str],
+        with_start: bool | int = True,
+        with_end: bool | int = True
+    ) -> list[str] | list[list[str]]:
         if isinstance(words, str):
-            tokens = [self.start_token] + list(words) + [self.end_token]
+            tokens: list[str] = []
+            if with_start:
+                tokens.extend([self.start_token] * int(with_start))
+            tokens.extend(list(words))
+            if with_end:
+                tokens.extend([self.end_token] * int(with_end))
             return tokens
         else:
-            return [self.tokenize(w) for w in words]
+            return [
+                self.tokenize(w, with_start=with_start, with_end=with_end)
+                for w in words
+            ]
 
     def untokenize(self, tokens: list[str], exclude_special_tokens: bool = True) -> str:
         if exclude_special_tokens:
