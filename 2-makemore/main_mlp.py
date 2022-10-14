@@ -35,11 +35,11 @@ def main():
     LR = 0.1
     MINIBATCH_SIZE = 32
 
-    for epoch in range(1000):
+    for epoch in range(10001):
         # minibatch construct
-        idxs = torch.randint(0, X.shape[0], (MINIBATCH_SIZE, ))
-        Xmb = X[idxs]
-        Ymb = Y[idxs]
+        mbis = torch.randint(0, X.shape[0], (MINIBATCH_SIZE, ))
+        Xmb = X[mbis]
+        Ymb = Y[mbis]
 
         logits = model.forward(Xmb)
         ## Loss calculation
@@ -47,10 +47,20 @@ def main():
         # - Will cluster up operations and even use fused kernels
         # - More numerically stable than doing logits.exp() which can result in inf
         loss = F.cross_entropy(logits, Ymb)
-        if epoch % 10 == 0:
-            print(f"loss={loss.item()}")
+        if epoch % 100 == 0:
+            print(f"Training loss = {loss.item()}")
 
         model.backward(loss, LR)
+
+        if epoch % 500 == 0:
+            eval_loss = model.eval(words)
+            print(f"Eval loss = {eval_loss}")
+
+    # sample
+    g = init_gen()
+    for _ in range(10):
+        word = model.generate(g)
+        print(word)
 
 if __name__ == '__main__':
     main()

@@ -54,6 +54,26 @@ class MlpModel:
         for p in self.parameters:
             p.data += -lr * p.grad # type: ignore
 
+    def generate(self, generator: torch.Generator) -> str:
+        encs = self.tokenizer.encode([self.tokenizer.start_token] * self.context_size)
+        while True:
+            X = torch.tensor(encs[-self.context_size:])
+            logits = self.forward(X)
+            probs = F.softmax(logits, dim=1)
+            enc = torch.multinomial(probs, num_samples=1, replacement=False, generator=generator).item()
+            enc = int(enc)
+            encs.append(enc)
+            if (self.tokenizer.decode(enc) == self.tokenizer.end_token):
+                break
+        tokens = self.tokenizer.decode(encs)
+        return self.tokenizer.untokenize(tokens)
+
+    def eval(self, words: list[str]) -> float:
+        X, Y = self.create_dataset(words)
+        logits = self.forward(X)
+        loss = F.cross_entropy(logits, Y, reduction='mean')
+        return loss.item()
+
     def create_dataset(self, words: list[str]) -> tuple[torch.Tensor, torch.Tensor]:
         xs: list[list[int]] = []
         ys: list[int] = []
