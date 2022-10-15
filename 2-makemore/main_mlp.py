@@ -1,5 +1,6 @@
 import torch 
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
 from mlp_model import MlpModel
 from tokenizer import Tokenizer
 
@@ -32,29 +33,45 @@ def main():
     )
     X, Y = model.create_dataset(words)
     
-    LR = 0.1
     MINIBATCH_SIZE = 32
+    EPOCHS = 1000
+    lre = torch.linspace(-3, 0, 1000)
+    lrs = 10**lre
 
-    for epoch in range(10001):
+    lrei: list[float] = []
+    lossi: list[float] = []
+
+    for epoch in range(EPOCHS):
         # minibatch construct
         mbis = torch.randint(0, X.shape[0], (MINIBATCH_SIZE, ))
         Xmb = X[mbis]
         Ymb = Y[mbis]
 
+        # forward pass
         logits = model.forward(Xmb)
-        ## Loss calculation
-        # - Much more efficient than manual softmax + picking out probs
-        # - Will cluster up operations and even use fused kernels
-        # - More numerically stable than doing logits.exp() which can result in inf
+        # loss calc
         loss = F.cross_entropy(logits, Ymb)
+        # backward pass
+        lr = lrs[epoch].item()
+        model.backward(loss, lr)
+
+        # stats
+        lrei.append(lre[epoch].item())
+        lossi.append(loss.item())
+
         if epoch % 100 == 0:
             print(f"Training loss = {loss.item()}")
-
-        model.backward(loss, LR)
-
         if epoch % 500 == 0:
             eval_loss = model.eval(words)
             print(f"Eval loss = {eval_loss}")
+
+    # plot loss against lr
+    fig = plt.figure(figsize=(16, 10))
+    plot = fig.add_subplot(111)
+
+    plot.plot(lrei, lossi)
+
+    fig.savefig('./figures/loss-vs-lr.png', bbox_inches='tight')
 
     # sample
     g = init_gen()
