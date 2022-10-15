@@ -1,7 +1,7 @@
 import torch 
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 from mlp_model import MlpModel
+from lr_scheduler import LearningRateScheduler
 from tokenizer import Tokenizer
 
 def init_gen():
@@ -34,14 +34,12 @@ def main():
     X, Y = model.create_dataset(words)
     
     MINIBATCH_SIZE = 32
-    EPOCHS = 1000
-    lre = torch.linspace(-3, 0, 1000)
-    lrs = 10**lre
+    scheduler = LearningRateScheduler([
+        (40000, 0.1),
+        (10000, 0.01)
+    ])
 
-    lrei: list[float] = []
-    lossi: list[float] = []
-
-    for epoch in range(EPOCHS):
+    for epoch, lr in scheduler:
         # minibatch construct
         mbis = torch.randint(0, X.shape[0], (MINIBATCH_SIZE, ))
         Xmb = X[mbis]
@@ -52,26 +50,14 @@ def main():
         # loss calc
         loss = F.cross_entropy(logits, Ymb)
         # backward pass
-        lr = lrs[epoch].item()
         model.backward(loss, lr)
 
         # stats
-        lrei.append(lre[epoch].item())
-        lossi.append(loss.item())
-
         if epoch % 100 == 0:
             print(f"Training loss = {loss.item()}")
-        if epoch % 500 == 0:
+        if epoch % 1000 == 0:
             eval_loss = model.eval(words)
             print(f"Eval loss = {eval_loss}")
-
-    # plot loss against lr
-    fig = plt.figure(figsize=(16, 10))
-    plot = fig.add_subplot(111)
-
-    plot.plot(lrei, lossi)
-
-    fig.savefig('./figures/loss-vs-lr.png', bbox_inches='tight')
 
     # sample
     g = init_gen()

@@ -15,9 +15,3 @@ class LearningRateScheduler:
             return self._epoch, self._lrs[self._epoch]
         finally:
             self._epoch += 1
-
-
-scheduler = LearningRateScheduler([(4, 0.1), (5, 0.01)])
-
-for epoch, lr in scheduler:
-    print(epoch, lr)
